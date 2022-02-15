@@ -4,12 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.testproject.data.repository.Repository
 import com.example.testproject.data.repository.entity.User
-import com.example.testproject.presentation.ui.user.UserViewState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.BufferOverflow
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -18,8 +18,8 @@ class UsersViewModel @Inject constructor(
     private val userRepository: Repository
 ) : ViewModel() {
 
-    private val _viewState = Channel<UsersViewState>(Channel.CONFLATED)
-    val viewState: Flow<UsersViewState> = _viewState.receiveAsFlow()
+    private val _viewState = MutableSharedFlow<UsersViewState>()
+    val viewState: SharedFlow<UsersViewState> = _viewState.asSharedFlow()
 
     init {
         getUsers()
@@ -35,13 +35,13 @@ class UsersViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             userRepository.getUser({ users ->
                 viewModelScope.launch {
-                    _viewState.send(UsersViewState.ShowProgress(false))
-                    _viewState.send(UsersViewState.Users(users))
+                    _viewState.emit(UsersViewState.ShowProgress(false))
+                    _viewState.emit(UsersViewState.Users(users))
                 }
             }, { error ->
                 viewModelScope.launch {
-                    _viewState.send(UsersViewState.ShowProgress(false))
-                    _viewState.send(UsersViewState.Error(error))
+                    _viewState.emit(UsersViewState.ShowProgress(false))
+                    _viewState.emit(UsersViewState.Error(error))
                 }
             })
         }
@@ -49,7 +49,7 @@ class UsersViewModel @Inject constructor(
 
     private fun openUserScreen(user: User) {
         viewModelScope.launch {
-            _viewState.send(UsersViewState.OpenUserScreen(user))
+            _viewState.emit(UsersViewState.OpenUserScreen(user))
         }
     }
 }

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.testproject.data.repository.Repository
 import com.example.testproject.data.repository.entity.User
+import com.example.testproject.presentation.ui.users.UsersViewState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.BufferOverflow
@@ -15,8 +16,8 @@ import javax.inject.Inject
 @HiltViewModel
 class UserViewModel @Inject constructor() : ViewModel() {
 
-    private val _viewState = Channel<UserViewState>(Channel.CONFLATED)
-    val viewState: Flow<UserViewState> = _viewState.receiveAsFlow()
+    private val _viewState = MutableSharedFlow<UserViewState>()
+    val viewState: SharedFlow<UserViewState> = _viewState.asSharedFlow()
 
     fun processAction(action: UserViewAction) {
         when (action) {
@@ -26,7 +27,7 @@ class UserViewModel @Inject constructor() : ViewModel() {
 
     private fun onBackPressed() {
         viewModelScope.launch {
-            _viewState.send(UserViewState.BackPressed)
+            _viewState.emit(UserViewState.BackPressed)
         }
     }
 }
