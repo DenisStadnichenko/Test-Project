@@ -7,18 +7,16 @@ import com.example.testproject.data.repository.entity.User
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.BufferOverflow
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class UserViewModel @Inject constructor() : ViewModel() {
 
-    private val _viewState =
-        MutableSharedFlow<UserViewState>(replay = 1, extraBufferCapacity = 0, onBufferOverflow = BufferOverflow.DROP_OLDEST)
-    val viewState: SharedFlow<UserViewState> = _viewState.asSharedFlow()
+    private val _viewState = Channel<UserViewState>(Channel.CONFLATED)
+    val viewState: Flow<UserViewState> = _viewState.receiveAsFlow()
 
     fun processAction(action: UserViewAction) {
         when (action) {
@@ -28,7 +26,7 @@ class UserViewModel @Inject constructor() : ViewModel() {
 
     private fun onBackPressed() {
         viewModelScope.launch {
-            _viewState.emit(UserViewState.BackPressed)
+            _viewState.send(UserViewState.BackPressed)
         }
     }
 }
